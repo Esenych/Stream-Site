@@ -47,19 +47,59 @@ export function useProposals() {
     }, []);
 
     const toggleVote = async (proposal: Proposal, userName: string) => {
-        if (!userName) return;
+    if (!userName) return;
 
-        const hasVoted = proposal.votes.includes(userName);
-        const newVotes = hasVoted
-            ? proposal.votes.filter((u) => u !== userName)
-            : [...proposal.votes, userName];
+    // 1. Ищем, за какую игру юзер УЖЕ проголосовал на этой доске
+    const previousVote = proposals.find(
+      (p) => p.tab === proposal.tab && p.votes.includes(userName)
+    );
 
-        setProposals((prev) =>
-            prev.map((item) => (item.id === proposal.id ? { ...item, votes: newVotes } : item))
-        );
+    // Кликнул ли юзер по той же самой игре, чтобы просто снять свой голос?
+    const isUnvoting = previousVote?.id === proposal.id;
 
-        await supabase.from('proposals').update({ votes: newVotes }).eq('id', proposal.id);
-    };
+    // 2. Мгновенно обновляем интерфейс (0 мс)
+    setProposals((prev) =>
+      prev.map((item) => {
+        if (item.tab !== proposal.tab) return item;
+
+        // Новая игра: добавляем голос (если не снимаем его)
+        if (item.id === proposal.id) {
+          return {
+            ...item,
+            votes: isUnvoting
+              ? item.votes.filter((u) => u !== userName)
+              : [...item.votes.filter((u) => u !== userName), userName],
+          };
+        }
+
+        // Старая игра: забираем голос, так как он переехал на другую игру
+        if (previousVote && item.id === previousVote.id) {
+          return {
+            ...item,
+            votes: item.votes.filter((u) => u !== userName),
+          };
+        }
+
+        return item;
+      })
+    );
+
+    // 3. Синхронизируем с Supabase
+    if (isUnvoting) {
+      // Просто сняли голос
+      const newVotes = proposal.votes.filter((u) => u !== userName);
+      await supabase.from('proposals').update({ votes: newVotes }).eq('id', proposal.id);
+    } else {
+      // Если был старый голос на другой игре — сначала очищаем его в базе
+      if (previousVote && previousVote.id !== proposal.id) {
+        const oldVotes = previousVote.votes.filter((u) => u !== userName);
+        await supabase.from('proposals').update({ votes: oldVotes }).eq('id', previousVote.id);
+      }
+      // Ставим голос на новую игру
+      const newVotes = [...proposal.votes.filter((u) => u !== userName), userName];
+      await supabase.from('proposals').update({ votes: newVotes }).eq('id', proposal.id);
+    }
+  };
 
     const addProposal = async (tab: string, columnName: string, title: string) => {
     const cleanTitle = title.trim();
