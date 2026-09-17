@@ -11,6 +11,7 @@ import { CurrentGames } from '@/components/CurrentGames';
 import { TopProposals } from '@/components/TopProposals';
 import { ProposalColumn } from '@/components/ProposalColumn';
 import { ConfirmModal } from '@/components/ConfirmModal';
+import { AlertToast } from '@/components/AlertToast';
 
 export default function Home() {
   const [currentUserId, setCurrentUserId] = useState<UserId | null>(null);
@@ -21,6 +22,8 @@ export default function Home() {
   const [itemToDelete, setItemToDelete] = useState<{ id: string; title: string } | null>(null);
 
   const { proposals, toggleVote, addProposal, deleteProposal, promoteToActive } = useProposals();
+
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('gv_current_user') as UserId | null;
@@ -57,6 +60,16 @@ export default function Home() {
     setItemToDelete(null);
   };
 
+  const handleAddProposal = async (colId: string, title: string) => {
+  const result = await addProposal(activeTab, colId, title);
+  if (!result.success && result.error) {
+    setToastMessage(result.error);
+    // Автоматически скрыть через 5 секунд
+    setTimeout(() => setToastMessage(null), 5000);
+  }
+  return result.success;
+};
+
   const currentUser = USERS.find((u) => u.id === currentUserId)?.name || '';
   const isOwner = currentUserId === activeTab;
 
@@ -80,6 +93,8 @@ export default function Home() {
     <main className="min-h-screen bg-[#0a0a0a] text-neutral-200 font-sans p-4 md:p-8">
       {/* 1. Выбор роли при первом заходе */}
       {isClientLoaded && !currentUserId && <UserSelectModal onSelect={handleSelectUser} />}
+
+      <AlertToast message={toastMessage} onClose={() => setToastMessage(null)} />
 
       {/* 2. Модалка с обучением */}
       <TutorialModal isOpen={isTutorialOpen} onClose={handleCloseTutorial} />
