@@ -89,6 +89,15 @@ export default function Home() {
   const currentTabGames = proposals.filter((p) => p.tab === activeTab);
   const activeCurrentGames = currentTabGames.filter((p) => p.column_name === 'current');
 
+  const handleAdd = async (colId: string, title: string) => {
+    const res = await addProposal(activeTab, colId, title);
+    if (!res.success && res.error) {
+      setToastMessage(res.error);
+      setTimeout(() => setToastMessage(null), 5000);
+    }
+    return res.success; // возвращаем именно boolean, чтобы TS был счастлив
+  };
+  
   return (
     <main className="min-h-screen bg-[#0a0a0a] text-neutral-200 font-sans p-4 md:p-8">
       {/* 1. Выбор роли при первом заходе */}
@@ -121,7 +130,7 @@ export default function Home() {
         activeTab={activeTab}
         isOwner={isOwner}
         games={activeCurrentGames}
-        onAdd={(title) => addProposal(activeTab, 'current', title)}
+        onAdd={(title) => handleAdd('current', title)}
         onDelete={(id, title) => setItemToDelete({ id, title })}
       />
 
@@ -152,7 +161,7 @@ export default function Home() {
               canManage={canManage}
               onVote={(item) => toggleVote(item, currentUser)}
               onDelete={(id, title) => setItemToDelete({ id, title })}
-              onAdd={(colId, title) => addProposal(activeTab, colId, title)}
+              onAdd={(colId, title) => handleAdd(colId, title)}
             />
           );
         })}
