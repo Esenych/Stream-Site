@@ -20,3 +20,11 @@ export interface ColumnConfig {
   label: string;
   color: string;
 }
+
+export interface ArchiveItem {
+  id: string;
+  tab: string;
+  title: string;
+  rating: number;
+  created_at: string;
+}
