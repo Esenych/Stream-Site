@@ -154,7 +154,18 @@ export function useProposals() {
         // Удаляем из базы
         await supabase.from('proposals').delete().eq('id', id);
     };
+    
+// Сброс всех голосов на конкретной доске
+  const resetVotes = async (tab: string) => {
+    // Мгновенный сброс на клиенте (0 мс)
+    setProposals((prev) =>
+      prev.map((item) => (item.tab === tab ? { ...item, votes: [] } : item))
+    );
 
+    // Сброс в базе Supabase
+    await supabase.from('proposals').update({ votes: [] }).eq('tab', tab);
+  };
+    
     const promoteToActive = async (tab: string, proposalId: string) => {
         setProposals((prev) =>
             prev.map((item) => {
