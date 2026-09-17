@@ -5,9 +5,10 @@ import { USERS, UserId, ColumnConfig } from '@/types';
 import { useProposals } from '@/hooks/useProposals';
 import { Header } from '@/components/Header';
 import { UserSelectModal } from '@/components/UserSelectModal';
+import { TutorialModal } from '@/components/TutorialModal'; // <-- Импорт
 import { BoardTabs } from '@/components/BoardTabs';
 import { CurrentGames } from '@/components/CurrentGames';
-import { TopProposals } from '@/components/TopProposals'; // <-- Новый импорт
+import { TopProposals } from '@/components/TopProposals';
 import { ProposalColumn } from '@/components/ProposalColumn';
 import { ConfirmModal } from '@/components/ConfirmModal';
 
@@ -15,10 +16,10 @@ export default function Home() {
   const [currentUserId, setCurrentUserId] = useState<UserId | null>(null);
   const [activeTab, setActiveTab] = useState<UserId>('stas');
   const [isClientLoaded, setIsClientLoaded] = useState(false);
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false); // Стейт модалки обучения
 
   const [itemToDelete, setItemToDelete] = useState<{ id: string; title: string } | null>(null);
 
-  // Достаем promoteToActive из хука:
   const { proposals, toggleVote, addProposal, deleteProposal, promoteToActive } = useProposals();
 
   useEffect(() => {
@@ -29,9 +30,20 @@ export default function Home() {
     setIsClientLoaded(true);
   }, []);
 
+  // При выборе пользователя проверяем, видел ли он обучение
   const handleSelectUser = (id: UserId) => {
     setCurrentUserId(id);
     localStorage.setItem('gv_current_user', id);
+
+    const hasSeenTutorial = localStorage.getItem('gv_tutorial_seen');
+    if (!hasSeenTutorial) {
+      setIsTutorialOpen(true);
+    }
+  };
+
+  const handleCloseTutorial = () => {
+    setIsTutorialOpen(false);
+    localStorage.setItem('gv_tutorial_seen', 'true');
   };
 
   const handleResetUser = () => {
@@ -66,8 +78,13 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[#0a0a0a] text-neutral-200 font-sans p-4 md:p-8">
+      {/* 1. Выбор роли при первом заходе */}
       {isClientLoaded && !currentUserId && <UserSelectModal onSelect={handleSelectUser} />}
 
+      {/* 2. Модалка с обучением */}
+      <TutorialModal isOpen={isTutorialOpen} onClose={handleCloseTutorial} />
+
+      {/* 3. Модалка подтверждения удаления */}
       <ConfirmModal
         isOpen={!!itemToDelete}
         title="Удаление предложения"
@@ -76,11 +93,15 @@ export default function Home() {
         onCancel={() => setItemToDelete(null)}
       />
 
-      <Header currentUser={currentUser} onResetUser={handleResetUser} />
+      {/* Шапка с кнопкой справки */}
+      <Header
+        currentUser={currentUser}
+        onResetUser={handleResetUser}
+        onOpenTutorial={() => setIsTutorialOpen(true)}
+      />
 
       <BoardTabs activeTab={activeTab} onSelectTab={setActiveTab} />
 
-      {/* Блок текущих игр */}
       <CurrentGames
         activeTab={activeTab}
         isOwner={isOwner}
@@ -89,7 +110,6 @@ export default function Home() {
         onDelete={(id, title) => setItemToDelete({ id, title })}
       />
 
-      {/* БЛОК ТОП ГОЛОСОВАНИЯ */}
       <TopProposals
         proposals={currentTabGames}
         activeTab={activeTab}
@@ -97,7 +117,6 @@ export default function Home() {
         onPromote={(item) => promoteToActive(activeTab, item.id)}
       />
 
-      {/* Сетка 4 столбцов */}
       <div className="max-w-7xl mx-auto mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {currentColumns.map((col) => {
           const colProposals = currentTabGames
