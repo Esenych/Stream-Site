@@ -197,5 +197,6 @@ export function useProposals() {
         addProposal,
         deleteProposal,
         promoteToActive,
+        resetVotes,
     };
 }
