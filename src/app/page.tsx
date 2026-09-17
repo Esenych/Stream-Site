@@ -24,6 +24,8 @@ export default function Home() {
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const { proposals, toggleVote, addProposal, deleteProposal, promoteToActive, resetVotes } = useProposals();
+  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
 
   // Модалки
   const [itemToDelete, setItemToDelete] = useState<{ id: string; title: string; isArchive?: boolean } | null>(null);
@@ -138,13 +140,18 @@ export default function Home() {
         onDelete={(id, title) => setItemToDelete({ id, title, isArchive: true })}
       />
 
-      <ConfirmModal
-        isOpen={!!itemToDelete}
-        title="Удаление игры"
-        gameName={itemToDelete?.title || ''}
-        onConfirm={handleConfirmDelete}
-        onCancel={() => setItemToDelete(null)}
-      />
+<ConfirmModal
+  isOpen={isResetConfirmOpen}
+  title="Сброс голосования"
+  gameName={`Доска: ${USERS.find((u) => u.id === activeTab)?.name}`}
+  description="Все текущие голоса на этой доске будут сброшены в ноль. Переголосовать?"
+  confirmText="Сбросить"
+  onConfirm={async () => {
+    await resetVotes(activeTab);
+    setIsResetConfirmOpen(false);
+  }}
+  onCancel={() => setIsResetConfirmOpen(false)}
+/>
 
       <Header
         currentUser={currentUser}
@@ -170,12 +177,14 @@ export default function Home() {
         onComplete={(game) => setGameToComplete(game)}
       />
 
-      <TopProposals
-        proposals={currentTabGames}
-        activeTab={activeTab}
-        isOwner={isOwner}
-        onPromote={(item) => promoteToActive(activeTab, item.id)}
-      />
+<TopProposals
+  proposals={currentTabGames}
+  activeTab={activeTab}
+  isOwner={isOwner}
+  isAdmin={isAdmin}
+  onPromote={(item) => promoteToActive(activeTab, item.id)}
+  onResetVotes={() => setIsResetConfirmOpen(true)}
+/>
 
       <div className="max-w-7xl mx-auto mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {currentColumns.map((col) => {
