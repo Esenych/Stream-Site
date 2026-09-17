@@ -4,11 +4,21 @@ interface Props {
   isOpen: boolean;
   title: string;
   gameName: string;
+  description?: string;
+  confirmText?: string;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
-export function ConfirmModal({ isOpen, title, gameName, onConfirm, onCancel }: Props) {
+export function ConfirmModal({
+  isOpen,
+  title,
+  gameName,
+  description = 'Ты действительно хочешь выполнить это действие?',
+  confirmText = 'Удалить',
+  onConfirm,
+  onCancel,
+}: Props) {
   if (!isOpen) return null;
 
   return (
@@ -22,7 +32,7 @@ export function ConfirmModal({ isOpen, title, gameName, onConfirm, onCancel }: P
         </div>
 
         <p className="text-xs text-neutral-400 mb-2">
-          Ты действительно хочешь снести эту игру из списка?
+          {description}
         </p>
 
         <div className="bg-black border border-neutral-800 px-3 py-2 text-xs font-mono text-neutral-200 mb-5 truncate">
@@ -40,7 +50,7 @@ export function ConfirmModal({ isOpen, title, gameName, onConfirm, onCancel }: P
             onClick={onConfirm}
             className="px-4 py-1.5 bg-red-500/10 border border-red-500 text-red-400 hover:bg-red-600 hover:text-black font-bold transition"
           >
-            Удалить
+            {confirmText}
           </button>
         </div>
       </div>
