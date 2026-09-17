@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { USERS, UserId, ColumnConfig, Proposal } from '@/types';
 import { useProposals } from '@/hooks/useProposals';
-import { useArchive } from '@/hooks/useArchive'; // <-- Наш новый хук архива
+import { useArchive } from '@/hooks/useArchive';
 import { Header } from '@/components/Header';
 import { UserSelectModal } from '@/components/UserSelectModal';
 import { TutorialModal } from '@/components/TutorialModal';
@@ -24,14 +24,14 @@ export default function Home() {
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const { proposals, toggleVote, addProposal, deleteProposal, promoteToActive, resetVotes } = useProposals();
-  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
 
-  // Модалки
+  // Стейты модалок
   const [itemToDelete, setItemToDelete] = useState<{ id: string; title: string; isArchive?: boolean } | null>(null);
   const [gameToComplete, setGameToComplete] = useState<Proposal | null>(null);
+  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
 
-  const { proposals, toggleVote, addProposal, deleteProposal, promoteToActive } = useProposals();
+  // Достаем методы из хуков
+  const { proposals, toggleVote, addProposal, deleteProposal, promoteToActive, resetVotes } = useProposals();
   const { archive, completeGame, deleteArchiveItem } = useArchive();
 
   useEffect(() => {
@@ -81,6 +81,7 @@ export default function Home() {
     setGameToComplete(null);
   };
 
+  // Обертка добавления с проверкой дублей
   const handleAdd = async (colId: string, title: string) => {
     const res = await addProposal(activeTab, colId, title);
     if (!res.success && res.error) {
@@ -113,16 +114,22 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[#0a0a0a] text-neutral-200 font-sans p-4 md:p-8">
+      {/* Тост с ошибками дубликатов */}
       <AlertToast message={toastMessage} onClose={() => setToastMessage(null)} />
 
+      {/* Выбор роли */}
       {isClientLoaded && !currentUserId && <UserSelectModal onSelect={handleSelectUser} />}
 
-      <TutorialModal isOpen={isTutorialOpen} onClose={() => {
-        setIsTutorialOpen(false);
-        localStorage.setItem('gv_tutorial_seen', 'true');
-      }} />
+      {/* Обучение */}
+      <TutorialModal
+        isOpen={isTutorialOpen}
+        onClose={() => {
+          setIsTutorialOpen(false);
+          localStorage.setItem('gv_tutorial_seen', 'true');
+        }}
+      />
 
-      {/* Модалка оценки при прохождении */}
+      {/* Оценка пройденной игры */}
       <CompleteModal
         isOpen={!!gameToComplete}
         gameTitle={gameToComplete?.title || ''}
@@ -130,7 +137,7 @@ export default function Home() {
         onCancel={() => setGameToComplete(null)}
       />
 
-      {/* Модалка Архива */}
+      {/* Зал славы (Архив) */}
       <ArchiveModal
         isOpen={isArchiveOpen}
         activeTab={activeTab}
@@ -140,19 +147,30 @@ export default function Home() {
         onDelete={(id, title) => setItemToDelete({ id, title, isArchive: true })}
       />
 
-<ConfirmModal
-  isOpen={isResetConfirmOpen}
-  title="Сброс голосования"
-  gameName={`Доска: ${USERS.find((u) => u.id === activeTab)?.name}`}
-  description="Все текущие голоса на этой доске будут сброшены в ноль. Переголосовать?"
-  confirmText="Сбросить"
-  onConfirm={async () => {
-    await resetVotes(activeTab);
-    setIsResetConfirmOpen(false);
-  }}
-  onCancel={() => setIsResetConfirmOpen(false)}
-/>
+      {/* Подтверждение удаления */}
+      <ConfirmModal
+        isOpen={!!itemToDelete}
+        title="Удаление игры"
+        gameName={itemToDelete?.title || ''}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setItemToDelete(null)}
+      />
 
+      {/* Подтверждение сброса голосов */}
+      <ConfirmModal
+        isOpen={isResetConfirmOpen}
+        title="Сброс голосования"
+        gameName={`Доска: ${USERS.find((u) => u.id === activeTab)?.name}`}
+        description="Все текущие голоса на этой доске будут сброшены в ноль. Переголосовать?"
+        confirmText="Сбросить"
+        onConfirm={async () => {
+          await resetVotes(activeTab);
+          setIsResetConfirmOpen(false);
+        }}
+        onCancel={() => setIsResetConfirmOpen(false)}
+      />
+
+      {/* Шапка */}
       <Header
         currentUser={currentUser}
         isAdmin={isAdmin}
@@ -166,8 +184,10 @@ export default function Home() {
         onOpenArchive={() => setIsArchiveOpen(true)}
       />
 
+      {/* Вкладки досок */}
       <BoardTabs activeTab={activeTab} onSelectTab={setActiveTab} />
 
+      {/* Текущая игра */}
       <CurrentGames
         activeTab={activeTab}
         isOwner={canManageActive}
@@ -177,15 +197,17 @@ export default function Home() {
         onComplete={(game) => setGameToComplete(game)}
       />
 
-<TopProposals
-  proposals={currentTabGames}
-  activeTab={activeTab}
-  isOwner={isOwner}
-  isAdmin={isAdmin}
-  onPromote={(item) => promoteToActive(activeTab, item.id)}
-  onResetVotes={() => setIsResetConfirmOpen(true)}
-/>
+      {/* Топ голосования + Явка + Сброс голосов */}
+      <TopProposals
+        proposals={currentTabGames}
+        activeTab={activeTab}
+        isOwner={isOwner}
+        isAdmin={isAdmin}
+        onPromote={(item) => promoteToActive(activeTab, item.id)}
+        onResetVotes={() => setIsResetConfirmOpen(true)}
+      />
 
+      {/* Колонки предложений */}
       <div className="max-w-7xl mx-auto mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {currentColumns.map((col) => {
           const colProposals = currentTabGames
