@@ -62,18 +62,50 @@ export function useProposals() {
     };
 
     const addProposal = async (tab: string, columnName: string, title: string) => {
-        const cleanTitle = title.trim();
-        if (!cleanTitle) return false;
+    const cleanTitle = title.trim();
+    if (!cleanTitle) return { success: false };
 
-        const { error } = await supabase.from('proposals').insert({
-            tab,
-            column_name: columnName,
-            title: cleanTitle,
-            votes: [],
-        });
+    // 1. Проверяем дубликат на текущей доске (без учета регистра)
+    const duplicate = proposals.find(
+      (p) =>
+        p.tab === tab &&
+        p.title.trim().toLowerCase() === cleanTitle.toLowerCase()
+    );
 
-        return !error;
-    };
+    if (duplicate) {
+      // Определяем, у кого она уже лежит
+      let locationText = '';
+      if (duplicate.column_name === 'current') {
+        locationText = 'в «Текущих играх» прямо сейчас';
+      } else if (duplicate.column_name === 'parallel') {
+        locationText = 'в «Личных предложениях» хозяина доски';
+      } else {
+        const ownerMap: Record<string, string> = {
+          stas: 'Стаса',
+          petrovich: 'Петровича',
+          kivi: 'Киви',
+          esen: 'Есена',
+        };
+        const name = ownerMap[duplicate.column_name] || duplicate.column_name;
+        locationText = `в столбце у ${name}`;
+      }
+
+      return {
+        success: false,
+        error: `«${duplicate.title}» уже есть ${locationText}. Не дублируй — просто поставь лайк!`,
+      };
+    }
+
+    // 2. Если дубликата нет — сохраняем в базу
+    const { error } = await supabase.from('proposals').insert({
+      tab,
+      column_name: columnName,
+      title: cleanTitle,
+      votes: [],
+    });
+
+    return { success: !error };
+  };
 
     const deleteProposal = async (id: string) => {
         // Мгновенно убираем из интерфейса (0 мс)
