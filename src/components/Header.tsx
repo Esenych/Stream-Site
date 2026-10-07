@@ -1,23 +1,27 @@
-import { Gamepad2, User, ArrowRightLeft, HelpCircle, Trophy, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { Gamepad2, User, ArrowRightLeft, HelpCircle, Trophy, Skull, ShieldAlert, ShieldCheck } from 'lucide-react';
 
 interface Props {
   currentUser: string;
   isAdmin: boolean;
   archiveCount: number;
+  droppedCount: number; // <-- Новый счетчик
   onToggleAdmin: () => void;
   onResetUser: () => void;
   onOpenTutorial: () => void;
   onOpenArchive: () => void;
+  onOpenDropped: () => void; // <-- Открыть брошенные
 }
 
 export function Header({
   currentUser,
   isAdmin,
   archiveCount,
+  droppedCount,
   onToggleAdmin,
   onResetUser,
   onOpenTutorial,
   onOpenArchive,
+  onOpenDropped,
 }: Props) {
   return (
     <header className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-neutral-800">
@@ -47,10 +51,20 @@ export function Header({
         <button
           onClick={onOpenArchive}
           className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono uppercase bg-neutral-900 border border-neutral-800 hover:border-amber-500/60 text-amber-400 hover:text-amber-300 transition"
-          title="Открыть Зал славы"
+          title="Пройденные игры"
         >
           <Trophy className="w-3.5 h-3.5" />
           <span>Архив ({archiveCount})</span>
+        </button>
+
+        {/* Кнопка Брошенных */}
+        <button
+          onClick={onOpenDropped}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono uppercase bg-neutral-900 border border-neutral-800 hover:border-red-500/60 text-red-400 hover:text-red-300 transition"
+          title="Брошенные игры"
+        >
+          <Skull className="w-3.5 h-3.5" />
+          <span>Брошенные ({droppedCount})</span>
         </button>
 
         {/* Кнопка Админки */}
