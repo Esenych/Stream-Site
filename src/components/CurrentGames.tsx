@@ -1,23 +1,33 @@
 import { useState } from 'react';
-import { Play, Plus, X, CheckSquare } from 'lucide-react';
+import { Play, Plus, X, CheckSquare, FlameOff } from 'lucide-react';
 import { Proposal, USERS, UserId } from '@/types';
 
 interface Props {
   activeTab: UserId;
+  currentUserId: UserId | null;
+  currentUser: string;
   isOwner: boolean;
+  isAdmin: boolean;
   games: Proposal[];
   onAdd: (title: string) => Promise<boolean>;
   onDelete: (id: string, title: string) => void;
-  onComplete: (game: Proposal) => void; // <-- Новый пропс
+  onComplete: (game: Proposal) => void;
+  onToggleDropVote: (game: Proposal) => void;
+  onDropGame: (game: Proposal) => void;
 }
 
 export function CurrentGames({
   activeTab,
+  currentUserId,
+  currentUser,
   isOwner,
+  isAdmin,
   games,
   onAdd,
   onDelete,
   onComplete,
+  onToggleDropVote,
+  onDropGame,
 }: Props) {
   const [title, setTitle] = useState('');
   const ownerName = USERS.find((u) => u.id === activeTab)?.name;
@@ -50,51 +60,103 @@ export function CurrentGames({
         {games.length === 0 ? (
           <div className="col-span-full py-2 text-xs font-mono text-neutral-600 italic">
             {isOwner
-              ? 'Вы еще не указали, что сейчас проходите. Добавьте игру ниже.'
+              ? 'Вы еще не указали, что сейчас проходите. Выберите победителя голосования или добавьте игру.'
               : 'Хозяин пока не указал текущую игру.'}
           </div>
         ) : (
-          games.map((game) => (
-            <div
-              key={game.id}
-              className="flex items-center justify-between gap-2 bg-black border border-neutral-800 px-3 py-2 text-xs group hover:border-neutral-700 transition"
-            >
-              <div className="flex items-center gap-2 truncate">
-                <span className="w-1.5 h-1.5 bg-emerald-500 shrink-0 shadow-sm shadow-emerald-500" />
-                <span className="font-semibold text-neutral-100 truncate">{game.title}</span>
-              </div>
+          games.map((game) => {
+            const dropVotes = game.votes || [];
+            const dropCount = dropVotes.length;
+            const hasVotedDrop = currentUser ? dropVotes.includes(currentUser) : false;
+            const canDrop = dropCount >= 2; // Порог дропа: от 2х голосов
 
-              {isOwner && (
-                <div className="flex items-center gap-1.5 shrink-0">
-                  {/* Кнопка "Пройдено" */}
-                  <button
-                    onClick={() => onComplete(game)}
-                    className="flex items-center gap-1 text-[11px] font-mono uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500 hover:text-black px-2 py-0.5 transition"
-                    title="Отметить как пройденное"
-                  >
-                    <CheckSquare className="w-3 h-3" />
-                    <span>Пройдено</span>
-                  </button>
+            return (
+              <div
+                key={game.id}
+                className={`bg-black border p-3 text-xs flex flex-col justify-between gap-2.5 transition ${
+                  canDrop ? 'border-red-500/70 shadow-lg shadow-red-500/5' : 'border-neutral-800 hover:border-neutral-700'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2 truncate">
+                    <span className="w-1.5 h-1.5 bg-emerald-500 shrink-0 shadow-sm shadow-emerald-500" />
+                    <span className="font-semibold text-neutral-100 truncate">{game.title}</span>
+                  </div>
 
-                  <button
-                    onClick={() => onDelete(game.id, game.title)}
-                    className="text-neutral-500 hover:text-red-400 transition p-0.5"
-                    title="Удалить"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
+                  {(isOwner || isAdmin) && (
+                    <button
+                      onClick={() => onDelete(game.id, game.title)}
+                      className="text-neutral-500 hover:text-red-400 transition p-0.5 shrink-0"
+                      title="Удалить"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
-              )}
-            </div>
-          ))
+
+                {/* Панель действий: Пройдено + Голосование за Дроп */}
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-neutral-800/60">
+                  
+                  {/* Кнопка "Пройдено" (для хозяина или админа) */}
+                  {(isOwner || isAdmin) ? (
+                    <button
+                      onClick={() => onComplete(game)}
+                      className="flex items-center gap-1 text-[10px] font-mono uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500 hover:text-black px-2 py-1 transition font-bold"
+                      title="Отметить как пройденное"
+                    >
+                      <CheckSquare className="w-3 h-3" />
+                      <span>Пройдено</span>
+                    </button>
+                  ) : <div />}
+
+                  {/* Блок Дропа */}
+                  <div className="flex items-center gap-1.5">
+                    {/* Кнопка голосования за дроп (хозяин сам голосовать не может!) */}
+                    {isOwner ? (
+                      <span className="text-[10px] font-mono text-neutral-500 border border-neutral-800 px-2 py-0.5 bg-neutral-950" title="Хозяин не может голосовать за свой дроп">
+                        Дроп: {dropCount}/2
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => onToggleDropVote(game)}
+                        className={`flex items-center gap-1 text-[10px] font-mono uppercase border px-2 py-0.5 transition ${
+                          hasVotedDrop
+                            ? 'bg-red-500 border-red-500 text-black font-bold'
+                            : 'bg-neutral-900 border-neutral-800 text-neutral-400 hover:border-red-500/50 hover:text-red-400'
+                        }`}
+                        title={hasVotedDrop ? 'Снять голос за дроп' : 'Проголосовать за дроп игры'}
+                      >
+                        <FlameOff className="w-3 h-3" />
+                        <span>Дроп {dropCount}/2</span>
+                      </button>
+                    )}
+
+                    {/* Финальная кнопка ДРОПНУТЬ (становится доступна от 2-х голосов) */}
+                    {canDrop && (isOwner || isAdmin) && (
+                      <button
+                        onClick={() => onDropGame(game)}
+                        className="flex items-center gap-1 text-[10px] font-mono uppercase bg-red-600 hover:bg-red-500 text-black px-2 py-0.5 font-bold transition animate-pulse"
+                        title="Дропнуть игру и перенести в брошенные"
+                      >
+                        <FlameOff className="w-3 h-3 fill-black" />
+                        <span>ДРОПНУТЬ!</span>
+                      </button>
+                    )}
+                  </div>
+
+                </div>
+              </div>
+            );
+          })
         )}
       </div>
 
-      {isOwner && (
+      {/* Поле добавления текущей игры */}
+      {(isOwner || isAdmin) && (
         <div className="mt-2.5 pt-2.5 border-t border-neutral-800/60 flex gap-1">
           <input
             type="text"
-            placeholder="Добавить текущую игру..."
+            placeholder="Добавить текущую игру вручную..."
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
