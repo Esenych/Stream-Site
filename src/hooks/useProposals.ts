@@ -191,12 +191,34 @@ export function useProposals() {
             .neq('id', proposalId);
     };
 
+    // Голосование за дроп активной игры
+  const toggleDropVote = async (proposal: Proposal, userName: string) => {
+    if (!userName) return;
+
+    const hasVoted = proposal.votes.includes(userName);
+    const newVotes = hasVoted
+      ? proposal.votes.filter((u) => u !== userName)
+      : [...proposal.votes, userName];
+
+    setProposals((prev) =>
+      prev.map((item) =>
+        item.id === proposal.id ? { ...item, votes: newVotes } : item
+      )
+    );
+
+    await supabase
+      .from('proposals')
+      .update({ votes: newVotes })
+      .eq('id', proposal.id);
+  };
+
     return {
         proposals,
         toggleVote,
         addProposal,
         deleteProposal,
         promoteToActive,
+        toggleDropVote,
         resetVotes,
     };
 }
