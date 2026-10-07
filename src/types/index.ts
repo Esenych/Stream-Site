@@ -28,3 +28,11 @@ export interface ArchiveItem {
   rating: number;
   created_at: string;
 }
+
+export interface DroppedItem {
+  id: string;
+  tab: string;
+  title: string;
+  voted_by: string[];
+  created_at: string;
+}
