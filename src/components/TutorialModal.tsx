@@ -1,4 +1,4 @@
-import { BookOpen, ThumbsUp, ShieldCheck, Dices, Play, Check, FlameOff } from 'lucide-react';
+import { BookOpen, ThumbsUp, ShieldCheck, Dices, Play, Check, Skull } from 'lucide-react';
 
 interface Props {
   isOpen: boolean;
@@ -73,7 +73,7 @@ export function TutorialModal({ isOpen, onClose }: Props) {
 
           {/* НОВЫЙ ПУНКТ ПРО ДРОП */}
           <div className="flex items-start gap-3 bg-red-950/20 border border-red-500/40 p-3">
-            <FlameOff className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+            <Skull className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
             <div>
               <span className="font-bold text-red-400 uppercase tracking-wide font-mono block mb-0.5">
                 5. Правила Дропа (2 часа стрима)
