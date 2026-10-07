@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { USERS, UserId, ColumnConfig, Proposal } from '@/types';
 import { useProposals } from '@/hooks/useProposals';
 import { useArchive } from '@/hooks/useArchive';
+import { useDropped } from '@/hooks/useDropped'; // <-- Хук брошенных
 import { Header } from '@/components/Header';
 import { UserSelectModal } from '@/components/UserSelectModal';
 import { TutorialModal } from '@/components/TutorialModal';
@@ -14,6 +15,7 @@ import { ProposalColumn } from '@/components/ProposalColumn';
 import { ConfirmModal } from '@/components/ConfirmModal';
 import { CompleteModal } from '@/components/CompleteModal';
 import { ArchiveModal } from '@/components/ArchiveModal';
+import { DroppedModal } from '@/components/DroppedModal'; // <-- Модалка брошенных
 import { AlertToast } from '@/components/AlertToast';
 
 export default function Home() {
@@ -22,34 +24,44 @@ export default function Home() {
   const [isClientLoaded, setIsClientLoaded] = useState(false);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
+  const [isDroppedOpen, setIsDroppedOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Стейты модалок
-  const [itemToDelete, setItemToDelete] = useState<{ id: string; title: string; isArchive?: boolean } | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<{ id: string; title: string; type?: 'proposal' | 'archive' | 'dropped' } | null>(null);
   const [gameToComplete, setGameToComplete] = useState<Proposal | null>(null);
+  const [gameToDrop, setGameToDrop] = useState<Proposal | null>(null);
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
 
-  // Достаем методы из хуков
-  const { proposals, toggleVote, addProposal, deleteProposal, promoteToActive, resetVotes } = useProposals();
+  // Хуки данных
+  const { proposals, toggleVote, addProposal, deleteProposal, promoteToActive, resetVotes, toggleDropVote } = useProposals();
   const { archive, completeGame, deleteArchiveItem } = useArchive();
+  const { dropped, dropGame, deleteDroppedItem } = useDropped();
 
+  // При заходе: проверяем юзера и ПРИНУДИТЕЛЬНО показываем справку v2
   useEffect(() => {
     const savedUser = localStorage.getItem('gv_current_user') as UserId | null;
     if (savedUser && USERS.some((u) => u.id === savedUser)) {
       setCurrentUserId(savedUser);
     }
+
+    const hasSeenV2 = localStorage.getItem('gv_tutorial_v2_seen');
+    if (!hasSeenV2) {
+      setIsTutorialOpen(true);
+    }
+
     setIsClientLoaded(true);
   }, []);
 
   const handleSelectUser = (id: UserId) => {
     setCurrentUserId(id);
     localStorage.setItem('gv_current_user', id);
+  };
 
-    const hasSeenTutorial = localStorage.getItem('gv_tutorial_seen');
-    if (!hasSeenTutorial) {
-      setIsTutorialOpen(true);
-    }
+  const handleCloseTutorial = () => {
+    setIsTutorialOpen(false);
+    localStorage.setItem('gv_tutorial_v2_seen', 'true');
   };
 
   const handleToggleAdmin = () => {
@@ -67,8 +79,10 @@ export default function Home() {
 
   const handleConfirmDelete = async () => {
     if (!itemToDelete) return;
-    if (itemToDelete.isArchive) {
+    if (itemToDelete.type === 'archive') {
       await deleteArchiveItem(itemToDelete.id);
+    } else if (itemToDelete.type === 'dropped') {
+      await deleteDroppedItem(itemToDelete.id);
     } else {
       await deleteProposal(itemToDelete.id);
     }
@@ -81,7 +95,12 @@ export default function Home() {
     setGameToComplete(null);
   };
 
-  // Обертка добавления с проверкой дублей
+  const handleConfirmDrop = async () => {
+    if (!gameToDrop) return;
+    await dropGame(gameToDrop.id, activeTab, gameToDrop.title, gameToDrop.votes);
+    setGameToDrop(null);
+  };
+
   const handleAdd = async (colId: string, title: string) => {
     const res = await addProposal(activeTab, colId, title);
     if (!res.success && res.error) {
@@ -111,23 +130,16 @@ export default function Home() {
   const currentTabGames = proposals.filter((p) => p.tab === activeTab);
   const activeCurrentGames = currentTabGames.filter((p) => p.column_name === 'current');
   const currentTabArchiveCount = archive.filter((a) => a.tab === activeTab).length;
+  const currentTabDroppedCount = dropped.filter((d) => d.tab === activeTab).length;
 
   return (
     <main className="min-h-screen bg-[#0a0a0a] text-neutral-200 font-sans p-4 md:p-8">
-      {/* Тост с ошибками дубликатов */}
       <AlertToast message={toastMessage} onClose={() => setToastMessage(null)} />
 
-      {/* Выбор роли */}
       {isClientLoaded && !currentUserId && <UserSelectModal onSelect={handleSelectUser} />}
 
-      {/* Обучение */}
-      <TutorialModal
-        isOpen={isTutorialOpen}
-        onClose={() => {
-          setIsTutorialOpen(false);
-          localStorage.setItem('gv_tutorial_seen', 'true');
-        }}
-      />
+      {/* Обучение со всеми правилами (откроется у всех автоматически) */}
+      <TutorialModal isOpen={isTutorialOpen} onClose={handleCloseTutorial} />
 
       {/* Оценка пройденной игры */}
       <CompleteModal
@@ -137,14 +149,24 @@ export default function Home() {
         onCancel={() => setGameToComplete(null)}
       />
 
-      {/* Зал славы (Архив) */}
+      {/* Модалка Архива */}
       <ArchiveModal
         isOpen={isArchiveOpen}
         activeTab={activeTab}
         archive={archive}
         canManage={canManageActive}
         onClose={() => setIsArchiveOpen(false)}
-        onDelete={(id, title) => setItemToDelete({ id, title, isArchive: true })}
+        onDelete={(id, title) => setItemToDelete({ id, title, type: 'archive' })}
+      />
+
+      {/* Модалка Брошенных */}
+      <DroppedModal
+        isOpen={isDroppedOpen}
+        activeTab={activeTab}
+        dropped={dropped}
+        canManage={canManageActive}
+        onClose={() => setIsDroppedOpen(false)}
+        onDelete={(id, title) => setItemToDelete({ id, title, type: 'dropped' })}
       />
 
       {/* Подтверждение удаления */}
@@ -154,6 +176,17 @@ export default function Home() {
         gameName={itemToDelete?.title || ''}
         onConfirm={handleConfirmDelete}
         onCancel={() => setItemToDelete(null)}
+      />
+
+      {/* Подтверждение дропа */}
+      <ConfirmModal
+        isOpen={!!gameToDrop}
+        title="Дроп игры со стрима"
+        gameName={gameToDrop?.title || ''}
+        description="Набрано 2+ голоса за дроп. Отправить игру в список «Брошенные»?"
+        confirmText="Дропнуть"
+        onConfirm={handleConfirmDrop}
+        onCancel={() => setGameToDrop(null)}
       />
 
       {/* Подтверждение сброса голосов */}
@@ -175,6 +208,7 @@ export default function Home() {
         currentUser={currentUser}
         isAdmin={isAdmin}
         archiveCount={currentTabArchiveCount}
+        droppedCount={currentTabDroppedCount}
         onToggleAdmin={handleToggleAdmin}
         onResetUser={() => {
           setCurrentUserId(null);
@@ -182,22 +216,28 @@ export default function Home() {
         }}
         onOpenTutorial={() => setIsTutorialOpen(true)}
         onOpenArchive={() => setIsArchiveOpen(true)}
+        onOpenDropped={() => setIsDroppedOpen(true)}
       />
 
       {/* Вкладки досок */}
       <BoardTabs activeTab={activeTab} onSelectTab={setActiveTab} />
 
-      {/* Текущая игра */}
+      {/* Текущая игра с голосованием за ДРОП */}
       <CurrentGames
         activeTab={activeTab}
-        isOwner={canManageActive}
+        currentUserId={currentUserId}
+        currentUser={currentUser}
+        isOwner={isOwner}
+        isAdmin={isAdmin}
         games={activeCurrentGames}
         onAdd={(title) => handleAdd('current', title)}
-        onDelete={(id, title) => setItemToDelete({ id, title })}
+        onDelete={(id, title) => setItemToDelete({ id, title, type: 'proposal' })}
         onComplete={(game) => setGameToComplete(game)}
+        onToggleDropVote={(game) => toggleDropVote(game, currentUser)}
+        onDropGame={(game) => setGameToDrop(game)}
       />
 
-      {/* Топ голосования + Явка + Сброс голосов */}
+      {/* Топ голосования + Явка + Сброс */}
       <TopProposals
         proposals={currentTabGames}
         activeTab={activeTab}
@@ -228,7 +268,7 @@ export default function Home() {
               currentUser={currentUser}
               canManage={canManage}
               onVote={(item) => toggleVote(item, currentUser)}
-              onDelete={(id, title) => setItemToDelete({ id, title })}
+              onDelete={(id, title) => setItemToDelete({ id, title, type: 'proposal' })}
               onAdd={(colId, title) => handleAdd(colId, title)}
             />
           );
