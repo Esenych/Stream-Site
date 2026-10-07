@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Play, Plus, X, CheckSquare, FlameOff } from 'lucide-react';
+import { Play, Plus, X, CheckSquare, Skull } from 'lucide-react';
 import { Proposal, USERS, UserId } from '@/types';
 
 interface Props {
@@ -126,7 +126,7 @@ export function CurrentGames({
                         }`}
                         title={hasVotedDrop ? 'Снять голос за дроп' : 'Проголосовать за дроп игры'}
                       >
-                        <FlameOff className="w-3 h-3" />
+                        <Skull className="w-3 h-3" />
                         <span>Дроп {dropCount}/2</span>
                       </button>
                     )}
@@ -138,7 +138,7 @@ export function CurrentGames({
                         className="flex items-center gap-1 text-[10px] font-mono uppercase bg-red-600 hover:bg-red-500 text-black px-2 py-0.5 font-bold transition animate-pulse"
                         title="Дропнуть игру и перенести в брошенные"
                       >
-                        <FlameOff className="w-3 h-3 fill-black" />
+                        <Skull className="w-3 h-3 fill-black" />
                         <span>ДРОПНУТЬ!</span>
                       </button>
                     )}
