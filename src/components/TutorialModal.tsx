@@ -1,4 +1,4 @@
-import { BookOpen, ThumbsUp, ShieldCheck, Dices, Play, Check } from 'lucide-react';
+import { BookOpen, ThumbsUp, ShieldCheck, Dices, Play, Check, FlameOff } from 'lucide-react';
 
 interface Props {
   isOpen: boolean;
@@ -10,18 +10,18 @@ export function TutorialModal({ isOpen, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-[#121212] border border-neutral-800 w-full max-w-lg p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-100">
+      <div className="bg-[#121212] border border-neutral-800 w-full max-w-lg p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-100 max-h-[90vh] overflow-y-auto">
         
         {/* Заголовок */}
         <div className="flex items-center gap-3 pb-3 border-b border-neutral-800 text-emerald-400">
           <BookOpen className="w-5 h-5 shrink-0" />
           <h2 className="text-sm font-bold uppercase tracking-wider font-mono text-neutral-100">
-            Как тут всё устроено (База)
+            Как тут всё устроено (Правила)
           </h2>
         </div>
 
-        {/* 4 пункта правил */}
-        <div className="mt-4 space-y-3.5 text-xs text-neutral-300">
+        {/* 5 пунктов правил */}
+        <div className="mt-4 space-y-3 text-xs text-neutral-300">
           
           <div className="flex items-start gap-3 bg-neutral-900/60 border border-neutral-800/80 p-3">
             <ShieldCheck className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
@@ -30,7 +30,7 @@ export function TutorialModal({ isOpen, onClose }: Props) {
                 1. Твоя колонка — твои правила
               </span>
               <p className="text-neutral-400 leading-relaxed">
-                Добавлять и удалять игры ты можешь <strong className="text-neutral-200">только в своем столбце</strong> (в «Личных предложениях» — только хозяин открытой доски). Чужие предложения удалить нельзя.
+                Добавлять и удалять игры ты можешь <strong className="text-neutral-200">только в своем столбце</strong> (в «Личных» — только хозяин доски). Чужие предложения защищены.
               </p>
             </div>
           </div>
@@ -39,10 +39,10 @@ export function TutorialModal({ isOpen, onClose }: Props) {
             <ThumbsUp className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
             <div>
               <span className="font-bold text-neutral-100 uppercase tracking-wide font-mono block mb-0.5">
-                2. Голосование за всё
+                2. Голосование (1 голос)
               </span>
               <p className="text-neutral-400 leading-relaxed">
-                Голосовать пальцем вверх можно за <strong className="text-neutral-200">любые игры на любой доске</strong>. Нажатие ставит твой голос, повторное — снимает. Карточки с максимумом лайков сами всплывают наверх.
+                У каждого участника есть <strong className="text-neutral-200">строго 1 голос на доске</strong>. Если голосуешь за новую игру, предыдущий голос автоматически переносится.
               </p>
             </div>
           </div>
@@ -54,7 +54,7 @@ export function TutorialModal({ isOpen, onClose }: Props) {
                 3. Блок лидеров и Рандом
               </span>
               <p className="text-neutral-400 leading-relaxed">
-                Сверху над колонками отображаются фавориты. Если у нескольких игр одинаково максимальный счет — жмите кнопку <strong className="text-amber-400 font-mono">РАНДОМ</strong>, чтобы рулетка выбрала победителя за вас.
+                Сверху отображаются лидеры и явка. При ничьей жмите кнопку <strong className="text-amber-400 font-mono">РАНДОМ</strong> для выбора победителя рулеткой.
               </p>
             </div>
           </div>
@@ -63,10 +63,25 @@ export function TutorialModal({ isOpen, onClose }: Props) {
             <Play className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5 fill-emerald-400" />
             <div>
               <span className="font-bold text-neutral-100 uppercase tracking-wide font-mono block mb-0.5">
-                4. Старт прохождения
+                4. Старт прохождения и Архив
               </span>
               <p className="text-neutral-400 leading-relaxed">
-                Когда победитель определен, хозяин доски нажимает <strong className="text-emerald-400 font-mono">В АКТИВНЫЕ</strong>. Игра перемещается в «Текущую игру», а счетчики голосов сбрасываются для нового голосования.
+                Хозяин нажимает <strong className="text-emerald-400 font-mono">В АКТИВНЫЕ</strong>. Игра идет в прохождение, а после завершения оценивается от 1 до 10 и сохраняется в <strong className="text-neutral-200">Архив</strong>.
+              </p>
+            </div>
+          </div>
+
+          {/* НОВЫЙ ПУНКТ ПРО ДРОП */}
+          <div className="flex items-start gap-3 bg-red-950/20 border border-red-500/40 p-3">
+            <FlameOff className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+            <div>
+              <span className="font-bold text-red-400 uppercase tracking-wide font-mono block mb-0.5">
+                5. Правила Дропа (2 часа стрима)
+              </span>
+              <p className="text-neutral-300 leading-relaxed">
+                Дропнуть текущую игру можно <strong className="text-red-300">только после минимум 2-х часов геймплея на стриме</strong>! 
+                Для дропа требуется согласие участников: должно набраться <strong className="text-red-300 font-mono">от 2 голосов</strong>. 
+                <span className="block mt-1 text-neutral-400 italic">Сам стример голосовать за свой дроп не может — решение принимают друзья!</span>
               </p>
             </div>
           </div>
@@ -80,7 +95,7 @@ export function TutorialModal({ isOpen, onClose }: Props) {
             className="w-full sm:w-auto flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-black px-5 py-2 text-xs font-mono font-bold uppercase transition shadow-lg shadow-emerald-500/10"
           >
             <Check className="w-4 h-4" />
-            <span>Понял, погнали</span>
+            <span>Ознакомлен, закрыть</span>
           </button>
         </div>
 
