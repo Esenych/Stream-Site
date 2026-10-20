@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { USERS, UserId, ColumnConfig, Proposal } from '@/types';
 import { useProposals } from '@/hooks/useProposals';
 import { useArchive } from '@/hooks/useArchive';
-import { useDropped } from '@/hooks/useDropped'; // <-- Хук брошенных
+import { useDropped } from '@/hooks/useDropped';
 import { Header } from '@/components/Header';
 import { UserSelectModal } from '@/components/UserSelectModal';
 import { TutorialModal } from '@/components/TutorialModal';
@@ -14,8 +14,9 @@ import { TopProposals } from '@/components/TopProposals';
 import { ProposalColumn } from '@/components/ProposalColumn';
 import { ConfirmModal } from '@/components/ConfirmModal';
 import { CompleteModal } from '@/components/CompleteModal';
+import { DropModal } from '@/components/DropModal';
 import { ArchiveModal } from '@/components/ArchiveModal';
-import { DroppedModal } from '@/components/DroppedModal'; // <-- Модалка брошенных
+import { DroppedModal } from '@/components/DroppedModal';
 import { AlertToast } from '@/components/AlertToast';
 
 export default function Home() {
@@ -28,18 +29,15 @@ export default function Home() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Стейты модалок
   const [itemToDelete, setItemToDelete] = useState<{ id: string; title: string; type?: 'proposal' | 'archive' | 'dropped' } | null>(null);
   const [gameToComplete, setGameToComplete] = useState<Proposal | null>(null);
   const [gameToDrop, setGameToDrop] = useState<Proposal | null>(null);
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
 
-  // Хуки данных
   const { proposals, toggleVote, addProposal, deleteProposal, promoteToActive, resetVotes, toggleDropVote } = useProposals();
   const { archive, completeGame, deleteArchiveItem } = useArchive();
   const { dropped, dropGame, deleteDroppedItem } = useDropped();
 
-  // При заходе: проверяем юзера и ПРИНУДИТЕЛЬНО показываем справку v2
   useEffect(() => {
     const savedUser = localStorage.getItem('gv_current_user') as UserId | null;
     if (savedUser && USERS.some((u) => u.id === savedUser)) {
@@ -89,15 +87,15 @@ export default function Home() {
     setItemToDelete(null);
   };
 
-  const handleConfirmComplete = async (rating: number) => {
+  const handleConfirmComplete = async (rating: number, review?: string) => {
     if (!gameToComplete) return;
-    await completeGame(gameToComplete.id, activeTab, gameToComplete.title, rating);
+    await completeGame(gameToComplete.id, activeTab, gameToComplete.title, rating, review);
     setGameToComplete(null);
   };
 
-  const handleConfirmDrop = async () => {
+  const handleConfirmDrop = async (review?: string) => {
     if (!gameToDrop) return;
-    await dropGame(gameToDrop.id, activeTab, gameToDrop.title, gameToDrop.votes);
+    await dropGame(gameToDrop.id, activeTab, gameToDrop.title, gameToDrop.votes, review);
     setGameToDrop(null);
   };
 
@@ -138,10 +136,8 @@ export default function Home() {
 
       {isClientLoaded && !currentUserId && <UserSelectModal onSelect={handleSelectUser} />}
 
-      {/* Обучение со всеми правилами (откроется у всех автоматически) */}
       <TutorialModal isOpen={isTutorialOpen} onClose={handleCloseTutorial} />
 
-      {/* Оценка пройденной игры */}
       <CompleteModal
         isOpen={!!gameToComplete}
         gameTitle={gameToComplete?.title || ''}
@@ -149,7 +145,13 @@ export default function Home() {
         onCancel={() => setGameToComplete(null)}
       />
 
-      {/* Модалка Архива */}
+      <DropModal
+        isOpen={!!gameToDrop}
+        gameTitle={gameToDrop?.title || ''}
+        onConfirm={handleConfirmDrop}
+        onCancel={() => setGameToDrop(null)}
+      />
+
       <ArchiveModal
         isOpen={isArchiveOpen}
         activeTab={activeTab}
@@ -159,7 +161,6 @@ export default function Home() {
         onDelete={(id, title) => setItemToDelete({ id, title, type: 'archive' })}
       />
 
-      {/* Модалка Брошенных */}
       <DroppedModal
         isOpen={isDroppedOpen}
         activeTab={activeTab}
@@ -169,7 +170,6 @@ export default function Home() {
         onDelete={(id, title) => setItemToDelete({ id, title, type: 'dropped' })}
       />
 
-      {/* Подтверждение удаления */}
       <ConfirmModal
         isOpen={!!itemToDelete}
         title="Удаление игры"
@@ -178,18 +178,6 @@ export default function Home() {
         onCancel={() => setItemToDelete(null)}
       />
 
-      {/* Подтверждение дропа */}
-      <ConfirmModal
-        isOpen={!!gameToDrop}
-        title="Дроп игры со стрима"
-        gameName={gameToDrop?.title || ''}
-        description="Набрано 2+ голоса за дроп. Отправить игру в список «Брошенные»?"
-        confirmText="Дропнуть"
-        onConfirm={handleConfirmDrop}
-        onCancel={() => setGameToDrop(null)}
-      />
-
-      {/* Подтверждение сброса голосов */}
       <ConfirmModal
         isOpen={isResetConfirmOpen}
         title="Сброс голосования"
@@ -203,7 +191,6 @@ export default function Home() {
         onCancel={() => setIsResetConfirmOpen(false)}
       />
 
-      {/* Шапка */}
       <Header
         currentUser={currentUser}
         isAdmin={isAdmin}
@@ -219,10 +206,8 @@ export default function Home() {
         onOpenDropped={() => setIsDroppedOpen(true)}
       />
 
-      {/* Вкладки досок */}
       <BoardTabs activeTab={activeTab} onSelectTab={setActiveTab} />
 
-      {/* Текущая игра с голосованием за ДРОП */}
       <CurrentGames
         activeTab={activeTab}
         currentUserId={currentUserId}
@@ -237,7 +222,6 @@ export default function Home() {
         onDropGame={(game) => setGameToDrop(game)}
       />
 
-      {/* Топ голосования + Явка + Сброс */}
       <TopProposals
         proposals={currentTabGames}
         activeTab={activeTab}
@@ -247,7 +231,6 @@ export default function Home() {
         onResetVotes={() => setIsResetConfirmOpen(true)}
       />
 
-      {/* Колонки предложений */}
       <div className="max-w-7xl mx-auto mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {currentColumns.map((col) => {
           const colProposals = currentTabGames

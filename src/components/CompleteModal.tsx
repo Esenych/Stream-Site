@@ -4,12 +4,13 @@ import { Trophy } from 'lucide-react';
 interface Props {
   isOpen: boolean;
   gameTitle: string;
-  onConfirm: (rating: number) => void;
+  onConfirm: (rating: number, review?: string) => void;
   onCancel: () => void;
 }
 
 export function CompleteModal({ isOpen, gameTitle, onConfirm, onCancel }: Props) {
   const [rating, setRating] = useState<number>(8);
+  const [review, setReview] = useState('');
 
   if (!isOpen) return null;
 
@@ -23,14 +24,13 @@ export function CompleteModal({ isOpen, gameTitle, onConfirm, onCancel }: Props)
           </h3>
         </div>
 
-        <div className="bg-black border border-neutral-800 px-3 py-2 text-xs font-mono text-neutral-200 mb-4 truncate">
+        <div className="bg-black border border-neutral-800 px-3 py-2 text-xs font-mono text-neutral-200 mb-3 truncate">
           &gt; {gameTitle}
         </div>
 
-        <p className="text-xs text-neutral-400 mb-3">Оценка стрима / прохождения:</p>
+        <p className="text-xs text-neutral-400 mb-2">Оценка стрима / прохождения:</p>
 
-        {/* Сетка оценок от 1 до 10 */}
-        <div className="grid grid-cols-5 gap-1.5 mb-5">
+        <div className="grid grid-cols-5 gap-1.5 mb-3">
           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
             <button
               key={num}
@@ -46,15 +46,29 @@ export function CompleteModal({ isOpen, gameTitle, onConfirm, onCancel }: Props)
           ))}
         </div>
 
+        <p className="text-xs text-neutral-400 mb-1.5">Отзыв / мнение стримера (необязательно):</p>
+        <textarea
+          placeholder="Сюжет пушка, графон топ, финал слабоват..."
+          value={review}
+          onChange={(e) => setReview(e.target.value)}
+          className="w-full bg-black border border-neutral-800 p-2 text-xs text-neutral-200 placeholder:text-neutral-600 outline-none focus:border-amber-500 font-mono resize-none h-16 mb-4 transition"
+        />
+
         <div className="flex justify-end gap-2 font-mono text-xs uppercase">
           <button
-            onClick={onCancel}
+            onClick={() => {
+              setReview('');
+              onCancel();
+            }}
             className="px-4 py-1.5 bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white transition"
           >
             Отмена
           </button>
           <button
-            onClick={() => onConfirm(rating)}
+            onClick={() => {
+              onConfirm(rating, review);
+              setReview('');
+            }}
             className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-black font-bold transition"
           >
             В архив

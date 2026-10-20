@@ -19,8 +19,6 @@ export function DroppedModal({ isOpen, activeTab, dropped, canManage, onClose, o
   return (
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-[#121212] border border-neutral-800 w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl animate-in fade-in zoom-in-95 duration-100">
-        
-        {/* Шапка */}
         <div className="flex items-center justify-between p-4 border-b border-neutral-800">
           <div className="flex items-center gap-2.5">
             <Skull className="w-5 h-5 text-red-500" />
@@ -33,7 +31,6 @@ export function DroppedModal({ isOpen, activeTab, dropped, canManage, onClose, o
           </button>
         </div>
 
-        {/* Список брошенных */}
         <div className="p-4 overflow-y-auto space-y-2 flex-1">
           {tabDropped.length === 0 ? (
             <div className="text-center py-8 text-xs font-mono text-neutral-600 italic">
@@ -43,39 +40,48 @@ export function DroppedModal({ isOpen, activeTab, dropped, canManage, onClose, o
             tabDropped.map((item) => (
               <div
                 key={item.id}
-                className="bg-black border border-neutral-800 p-3 flex flex-wrap items-center justify-between gap-3 hover:border-red-950/60 transition"
+                className="bg-black border border-neutral-800 p-3 hover:border-red-950/60 transition flex flex-col gap-2"
               >
-                <div>
-                  <span className="text-xs font-bold text-neutral-200 line-through opacity-75 block">
-                    {item.title}
-                  </span>
-                  <div className="flex items-center gap-1.5 mt-1 text-[10px] font-mono text-neutral-500">
-                    <span>Одобрили дроп:</span>
-                    <div className="flex gap-1">
-                      {item.voted_by.map((voter) => (
-                        <span key={voter} className="bg-red-500/10 border border-red-500/30 text-red-400 px-1 py-0.2">
-                          {voter}
-                        </span>
-                      ))}
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <span className="text-xs font-bold text-neutral-200 line-through opacity-75 block">
+                      {item.title}
+                    </span>
+                    <div className="flex items-center gap-1.5 mt-1 text-[10px] font-mono text-neutral-500">
+                      <span>Одобрили дроп:</span>
+                      <div className="flex gap-1">
+                        {item.voted_by.map((voter) => (
+                          <span key={voter} className="bg-red-500/10 border border-red-500/30 text-red-400 px-1 py-0.2">
+                            {voter}
+                          </span>
+                        ))}
+                      </div>
                     </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <span className="text-[10px] font-mono text-neutral-500">
+                      {new Date(item.created_at).toLocaleDateString('ru-RU')}
+                    </span>
+
+                    {canManage && (
+                      <button
+                        onClick={() => onDelete(item.id, item.title)}
+                        className="text-neutral-600 hover:text-red-400 transition"
+                        title="Удалить запись"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <span className="text-[10px] font-mono text-neutral-500">
-                    {new Date(item.created_at).toLocaleDateString('ru-RU')}
-                  </span>
-
-                  {canManage && (
-                    <button
-                      onClick={() => onDelete(item.id, item.title)}
-                      className="text-neutral-600 hover:text-red-400 transition"
-                      title="Удалить запись"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
+                {/* Причина дропа */}
+                {item.review && (
+                  <p className="text-[11px] text-neutral-400 font-mono italic pl-2.5 border-l-2 border-red-500/40 bg-neutral-900/40 py-1 pr-2">
+                    "{item.review}"
+                  </p>
+                )}
               </div>
             ))
           )}

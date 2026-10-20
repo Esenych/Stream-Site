@@ -42,11 +42,12 @@ export function useDropped() {
     };
   }, []);
 
-  const dropGame = async (proposalId: string, tab: string, title: string, votedBy: string[]) => {
+const dropGame = async (proposalId: string, tab: string, title: string, votedBy: string[], review?: string) => {
     await supabase.from('dropped').insert({
       tab,
       title,
       voted_by: votedBy,
+      review: review?.trim() || null,
     });
 
     await supabase.from('proposals').delete().eq('id', proposalId);

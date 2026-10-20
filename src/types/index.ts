@@ -26,6 +26,7 @@ export interface ArchiveItem {
   tab: string;
   title: string;
   rating: number;
+  review?: string | null;
   created_at: string;
 }
 
@@ -34,5 +35,6 @@ export interface DroppedItem {
   tab: string;
   title: string;
   voted_by: string[];
+  review?: string | null;
   created_at: string;
 }

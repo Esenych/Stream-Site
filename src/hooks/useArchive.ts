@@ -42,16 +42,18 @@ export function useArchive() {
     };
   }, []);
 
-  // Добавить в архив и удалить из таблицы proposals
-  const completeGame = async (proposalId: string, tab: string, title: string, rating: number) => {
-    // 1. Закидываем в архив
+
+const completeGame = async (proposalId: string, tab: string, title: string, rating: number, review?: string) => {
     await supabase.from('archive').insert({
       tab,
       title,
       rating,
+      review: review?.trim() || null,
     });
 
-    // 2. Сносим из активных proposals
+    await supabase.from('proposals').delete().eq('id', proposalId);
+  };
+
     await supabase.from('proposals').delete().eq('id', proposalId);
   };
 
