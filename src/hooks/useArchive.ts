@@ -42,17 +42,19 @@ export function useArchive() {
     };
   }, []);
 
-
-const completeGame = async (proposalId: string, tab: string, title: string, rating: number, review?: string) => {
+  const completeGame = async (
+    proposalId: string,
+    tab: string,
+    title: string,
+    rating: number,
+    review?: string
+  ) => {
     await supabase.from('archive').insert({
       tab,
       title,
       rating,
       review: review?.trim() || null,
     });
-
-    await supabase.from('proposals').delete().eq('id', proposalId);
-  };
 
     await supabase.from('proposals').delete().eq('id', proposalId);
   };
