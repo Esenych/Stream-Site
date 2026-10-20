@@ -1,36 +1,91 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+<div align="center">
 
-## Getting Started
+# 🎮 STREAM GAMES HUB
 
-First, run the development server:
+**Интерактивная Realtime-система голосования и трекинга игр для стримов**
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+![Next.js](https://img.shields.io/badge/Next.js_14-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
+![pnpm](https://img.shields.io/badge/pnpm-F69220?style=for-the-badge&logo=pnpm&logoColor=white)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+</div>
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 📌 О проекте
 
-## Learn More
+Веб-приложение, созданное для замены громоздких Excel-таблиц во время посиделок и стримов в Discord. 
 
-To learn more about Next.js, take a look at the following resources:
+Платформа позволяет компании друзей синхронно предлагать игры, голосовать в реальном времени, отправлять непонравившиеся тайтлы в «Дроп» по правилам стрима и вести личный «Зал Славы» с оценками и рецензиями.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## ⚡ Ключевой функционал
 
-## Deploy on Vercel
+- 🔄 **Realtime-синхронизация:** любые голоса, добавления и удаления мгновенно обновляются на экранах всех участников без перезагрузки страницы (WebSockets / Supabase).
+- 🎯 **Честное голосование (1 голос):** у каждого участника есть строго 1 голос на доске. При выборе другой игры голос автоматически переносится.
+- 🚫 **Защита от дубликатов:** алгоритм блокирует добавление одинаковых игр и подсказывает, кто из друзей уже внёс это предложение.
+- 🎲 **Разрешение ничьей (Рандом):** если несколько лидеров набрали одинаковое число голосов, рулетка автоматически определяет победителя.
+- 💀 **Механика Дропа:**
+  - Игра может быть дропнута только при согласии зрителей/друзей (порог $\ge 2$ голосов).
+  - Стример **не может голосовать за свой дроп**.
+  - Возможность оставить текстовый крик души / причину дропа.
+- 🏆 **Зал Славы (Архив):** сохранение пройденных игр с выставлением оценки от 1 до 10 и отзывом стримера.
+- 🔗 **Быстрый ресерч:** в карточку каждой игры вшиты прямые ссылки с оригинальными логотипами на **Steam**, **HowLongToBeat** и **Google**.
+- 👥 **Счетчик явки:** индикатор `Явка (X/4)` наглядно показывает, кто уже проголосовал (`✔`), а кто задерживает войс (`⏳`).
+- 🛡️ **Режим Администратора:** скрытый вход по PIN-коду для экстренной модерации и зачистки любых колонок.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📜 Стримерский кодекс (Правила)
+
+1. **Твоя колонка — твои правила:** добавлять и удалять предложения можно только в своем столбце (в личных — только хозяин доски).
+2. **2-часовое правило:** стример обязан отыграть минимум 2 часа до запуска голосования за дроп.
+3. **Право на дроп:** решение о дропе принимают исключительно друзья (минимум 2 голоса).
+4. **Фиксация истории:** после прохождения стример выставляет оценку и пишет краткий отзыв в Зал Славы.
+
+---
+
+## 🛠 Стек технологий
+
+- **Фронтенд:** [Next.js (App Router)](https://nextjs.org/) + [React](https://react.dev/)
+- **Стилизация:** [Tailwind CSS](https://tailwindcss.com/) (строгий брутальный Dark UI)
+- **Иконки:** [Lucide React](https://lucide.dev/) + кастомные SVG логотипы платформ
+- **База данных и сокеты:** [Supabase](https://supabase.com/) (PostgreSQL + Realtime Publication)
+- **Пакетный менеджер:** [pnpm](https://pnpm.io/)
+
+---
+
+## 📁 Структура проекта
+
+```text
+src/
+├── app/
+│   ├── globals.css         # Кастомный строгий скроллбар и глобальные стили
+│   ├── layout.tsx          # Метаданные и каркас
+│   └── page.tsx            # Главный оркестратор состояния
+├── components/
+│   ├── AlertToast.tsx      # Уведомления об ошибках и дубликатах
+│   ├── ArchiveModal.tsx    # Зал Славы пройденных игр
+│   ├── BoardTabs.tsx       # Переключатель досок участников
+│   ├── CompleteModal.tsx   # Модалка оценки и отзыва пройденной игры
+│   ├── ConfirmModal.tsx    # Универсальная модалка подтверждения действий
+│   ├── CurrentGames.tsx    # Блок «Текущая игра» с голосованием за дроп
+│   ├── DropModal.tsx       # Модалка указания причины дропа
+│   ├── DroppedModal.tsx    # Список брошенных игр
+│   ├── Header.tsx          # Шапка с профилем, админкой и счетчиками
+│   ├── ProposalCard.tsx    # Карточка игры (лайки, логотипы, ссылки)
+│   ├── ProposalColumn.tsx  # Колонка предложений с валидацией ввода
+│   ├── TopProposals.tsx    # Блок лидеров голосования + Явка + Рандом
+│   ├── TutorialModal.tsx   # Интерактивная справка по правилам хаба
+│   └── UserSelectModal.tsx # Выбор профиля при первом входе
+├── hooks/
+│   ├── useArchive.ts       # Работа с таблицей архива
+│   ├── useDropped.ts       # Работа с таблицей брошенных игр
+│   └── useProposals.ts     # Логика голосования, дубликатов и Realtime
+├── lib/
+│   └── supabase.ts         # Инициализация клиента Supabase
+└── types/
+    └── index.ts            # Интерфейсы данных и конфиг участников
